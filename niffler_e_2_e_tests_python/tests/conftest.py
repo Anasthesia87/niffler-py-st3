@@ -49,3 +49,7 @@ def profile_page(browser_init):
 def valid_user():
     return {"username": "aslavret8", "password": "aslavret8"}
 
+@pytest.fixture
+def invalid_user():
+    return {"username": "aslavret88", "password": "aslavret88"}
+

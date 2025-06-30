@@ -51,8 +51,8 @@ class LoginPage(WelcomePage):
             f"Входим в приложение пользователем: {1} с паролем: {2}"
         ):
             self.open_login_page()
-            self.type_username('test_user')
-            self.type_password('password')
+            self.type_username()
+            self.type_password()
             self.submit_form()
 
     # def login_with_valid_credentials(self, username: str, password: str):
