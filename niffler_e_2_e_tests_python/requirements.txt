@@ -1,0 +1,9 @@
+selene>=2.0.0rc9
+pytest
+requests
+pkce
+faker
+allure-pytest
+python-dotenv
+sqlmodel
+pydantic
