@@ -173,10 +173,10 @@ services:
   niffler-e-2-e:
     profiles: [ test ]
     container_name: niffler-e-2-e
-    image: ${PREFIX}/niffler-e-2-e-tests:latest
+    image: ${PREFIX}/niffler-e-2-e-niffler_e_2_e_tests_python:latest
     build:
       context: ./
-      dockerfile: ./niffler-e-2-e-tests/Dockerfile
+      dockerfile: ./niffler-e-2-e-niffler_e_2_e_tests_python/Dockerfile
     environment:
       - ALLURE_DOCKER_API=${ALLURE_DOCKER_API}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
