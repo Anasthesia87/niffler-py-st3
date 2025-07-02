@@ -7,8 +7,9 @@ class ProfilePage:
         self.input_category = browser.element('#category')
         self.button_add_category = browser.element('.add-category__input-container button')
         self.successful_alert =  browser.element('div.MuiTypography-body1')
+        self.unsuccessful_alert = browser.element('.input__helper-text')
         self.error_alert = browser.element('.add-category__input-container button')
-        self.error_message = browser.element('div.MuiTypography-body1')
+        self.error_message = browser.element('div.MuiAlert-message div.MuiTypography-body1')
         self.username = browser.element('#username')
         self.name = browser.element('#name')
         self.button_submit = browser.element('[type="submit"]')
@@ -44,9 +45,12 @@ class ProfilePage:
     def check_error_message(self):
         self.successful_alert.should(have.text('Can not add new category'))
 
+    def check_error_message_adding_empty_name_category(self):
+        self.input_category.type('').press_enter()
+        self.unsuccessful_alert.should(have.text('Allowed category length is from 2 to 50 symbols'))
+
     def check_adding_empty_name_category(self):
-        self.input_category.type('')
-        self.button_add_category.click()
+        self.input_category.type('').press_enter()
         self.check_error_message()
 
     def check_filling_form(self, name):

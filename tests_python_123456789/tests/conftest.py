@@ -195,14 +195,7 @@ def add_category(authenticated_user, envs, generate_category_name):
     browser.element('li.MuiMenuItem-root a.nav-link[href="/profile"]').should(be.clickable).click()
     profile_page.check_adding_category(generate_category_name)
 
-@pytest.fixture
-def add_dublicate_category(authenticated_user, envs):
-    category_name = 'done'
-    browser.element('[aria-label="Menu"]').should(be.clickable).click()
-    browser.element('li.MuiMenuItem-root a.nav-link[href="/profile"]').should(be.clickable).click()
-    profile_page.check_adding_category(category_name)
-    profile_page.successful_adding()
-    profile_page.check_adding_category(category_name)
+
 
 
 
