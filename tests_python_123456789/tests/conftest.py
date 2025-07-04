@@ -1,4 +1,5 @@
 import os
+import uuid
 from time import sleep
 
 import allure
@@ -7,6 +8,7 @@ from click import password_option
 
 from dotenv import load_dotenv
 from faker import Faker
+from fastapi import requests
 from selene import browser, be, have
 
 from allure_commons.types import AttachmentType
@@ -196,8 +198,33 @@ def add_category(authenticated_user, envs, generate_category_name):
     profile_page.check_adding_category(generate_category_name)
 
 
+@pytest.fixture
+def create_spending(category, amount, description, currency, spend_date):
+    GATEWAY_URL = os.getenv("GATEWAY_URL")
+    TOKEN = os.getenv("TOKEN")
 
-
+    url = f"{GATEWAY_URL}/spends/add"
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Accept": "*/*",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "id": str(uuid.uuid4()),  # Добавляем уникальный идентификатор
+        "spendDate": spend_date,
+        "category": {
+            "id": str(uuid.uuid4()),  # Добавляем уникальный идентификатор категории
+            "name": category,
+            "username": username,
+            "archived": False
+        },
+        "currency": currency,
+        "amount": amount,
+        "description": description,
+        "username": username
+    }
+    response = requests.post(url, json=data, headers=headers)
+    return response.json()
 
 
 
