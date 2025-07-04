@@ -1,6 +1,10 @@
 import os
 import uuid
 from time import sleep
+from typing import Dict, Any
+
+import requests
+
 
 import allure
 import pytest
@@ -8,10 +12,10 @@ from click import password_option
 
 from dotenv import load_dotenv
 from faker import Faker
-from fastapi import requests
 from selene import browser, be, have
 
 from allure_commons.types import AttachmentType
+from sqlalchemy.testing.suite.test_reflection import users
 
 from tests_python_123456789.models.config import Envs
 from tests_python_123456789.pages.login_page import login_page
@@ -199,32 +203,110 @@ def add_category(authenticated_user, envs, generate_category_name):
 
 
 @pytest.fixture
-def create_spending(category, amount, description, currency, spend_date):
-    GATEWAY_URL = os.getenv("GATEWAY_URL")
-    TOKEN = os.getenv("TOKEN")
+def api_create_spending(envs) -> Dict[str, Any]:
+    """Фикстура для создания траты через API с возможностью кастомизации параметров."""
 
-    url = f"{GATEWAY_URL}/spends/add"
-    headers = {
-        "Authorization": f"Bearer {TOKEN}",
-        "Accept": "*/*",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "id": str(uuid.uuid4()),  # Добавляем уникальный идентификатор
-        "spendDate": spend_date,
-        "category": {
-            "id": str(uuid.uuid4()),  # Добавляем уникальный идентификатор категории
-            "name": category,
-            "username": username,
-            "archived": False
-        },
-        "currency": currency,
-        "amount": amount,
-        "description": description,
-        "username": username
-    }
-    response = requests.post(url, json=data, headers=headers)
-    return response.json()
+    def _create_spending(
+            category: str,
+            amount: float,
+            description: str = "Test spending",
+            currency: str = "USD",
+            spend_date: str = "2023-01-01",
+            username: str = "aslavret",
+            should_cleanup: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Создает трату через API.
+
+        Args:
+            category: Название категории
+            amount: Сумма траты
+            description: Описание траты (по умолчанию "Test spending")
+            currency: Валюта (по умолчанию "USD")
+            spend_date: Дата траты в формате YYYY-MM-DD (по умолчанию "2023-01-01")
+            username: Имя пользователя (по умолчанию "aslavret")
+            should_cleanup: Флаг для удаления после использования (по умолчанию True)
+
+        Returns:
+            Словарь с данными созданной траты
+        """
+        API_URL = os.getenv("API_URL")
+        if not API_URL:
+            pytest.fail("API_URL environment variable is not set")
+
+        TOKEN = os.getenv("TOKEN")
+        if not TOKEN:
+            pytest.fail("TOKEN environment variable is not set")
+
+        url = f"{API_URL}/spends/add"
+        headers = {
+            "Authorization": f"Bearer {TOKEN}",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+
+        spending_id = str(uuid.uuid4())
+        category_id = str(uuid.uuid4())
+
+        data = {
+            "id": spending_id,
+            "spendDate": spend_date,
+            "category": {
+                "id": category_id,
+                "name": category,
+                "username": username,
+                "archived": False
+            },
+            "currency": currency,
+            "amount": amount,
+            "description": description,
+            "username": username
+        }
+
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()  # Бросит исключение для статусов 4XX/5XX
+
+        spending_data = response.json()
+
+        # Добавляем ID для возможной очистки
+        if should_cleanup:
+            def cleanup():
+                delete_url = f"{API_URL}/spends/{spending_id}"
+                requests.delete(delete_url, headers=headers)
+
+            # Для pytest можно использовать request.addfinalizer
+            # или просто вернуть данные с функцией очистки
+            spending_data["cleanup"] = cleanup
+
+        return spending_data
+
+    return _create_spending
+
+
+@pytest.fixture
+def api_delete_spending():
+    """Фикстура для удаления траты через API"""
+
+    def _delete_spending(spending_id: str):
+        API_URL = os.getenv("API_URL")
+        TOKEN = os.getenv("TOKEN")
+
+        if not API_URL or not TOKEN:
+            pytest.fail("API_URL or TOKEN environment variables not set")
+
+        url = f"{API_URL}/spends/remove?ids={spending_id}"
+        headers = {
+            "Authorization": f"Bearer {TOKEN}",
+            "Accept": "application/json"
+        }
+
+        response = requests.delete(url, headers=headers)
+        response.raise_for_status()  # Проверяет, что статус 200
+        return True  # Если статус 200, считаем удаление успешным
+
+    return _delete_spending
+
+
 
 
 
