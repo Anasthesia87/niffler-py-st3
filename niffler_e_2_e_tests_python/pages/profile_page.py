@@ -1,41 +1,50 @@
-from .base_page import BasePage
+from selene import browser, have, be
 
 
-class ProfilePage(BasePage):
-    def __init__(self, page):
-        super().__init__(page)
-        self.profile_name_input = page.locator("#name")
-        self.save_changes_button = page.get_by_role("button", name="Save changes")
-        self.profile_success_update_popup = page.get_by_text("Profile successfully updated")
+class ProfilePage:
 
-        self.category_name_input = page.get_by_placeholder("Add new category")
-        self.archive_dialog = page.get_by_role("dialog")
-        self.archive_dialog_button = self.archive_dialog.get_by_role("button", name="Archive")
-        self.is_archive_include_checkbox = page.get_by_label("Show archived")
-        self.edit_category_input = page.get_by_placeholder("Edit category")
-        self.category_succes_edit_popup = page.get_by_text(f"Category name is changed")
+    def __init__(self):
+        self.input_category = browser.element('#category')
+        self.menu_button = browser.element('[aria-label="Menu"]')
+        self.profile = browser.element('li.MuiMenuItem-root a.nav-link[href="/profile"]')
+        self.button_add_category = browser.element('.add-category__input-container button')
+        self.successful_alert = browser.element('div.MuiTypography-body1')
+        self.unsuccessful_alert = browser.element('.input__helper-text')
+        self.error_alert = browser.element('.add-category__input-container button')
+        self.error_message = browser.element('div.MuiAlert-message div.MuiTypography-body1')
+        self.username = browser.element('#username')
+        self.name = browser.element('#name')
+        self.button_submit = browser.element('[type="submit"]')
+        self.person_icon = browser.element('[data-testid="PersonIcon"]')
+        self.profile = browser.element('//li[.="Profile"]')
+        self.category_name = lambda name_category: browser.element(f'//span[.="{name_category}"]').should(
+            have.text(f"{name_category}"))
+        self.name_category = browser.element('input[name=category]')
+        self.category_name = lambda name: browser.all('span.MuiChip-label.MuiChip-labelMedium.css-14vsv3w').element_by(
+            have.text(name))
+        self.category_input = lambda name: browser.element(f'input[value="{name}"]')
+        self.parent_element = browser.all('div:has(span.MuiChip-label.MuiChip-labelMedium.css-14vsv3w)')
+        self.archive_button = 'button[aria-label="Archive category"]'
+        self.confirm_archive = browser.all('button[type=button]').element_by(have.text('Archive'))
+        self.archived_button = browser.element('//span[.="Show archived"]')
+        self.archived_category = lambda name: browser.all(
+            'span.MuiChip-label.MuiChip-labelMedium.css-14vsv3w').element_by(
+            have.text(name))
 
-    def change_profile_name(self, profile_name: str):
-        self.profile_name_input.fill(profile_name)
-        self.save_changes_button.click()
-        self.profile_success_update_popup.wait_for()
+    def successful_adding(self):
+        self.successful_alert.should(have.text('You\'ve added new category:'))
 
-    def add_category(self, category_name: str):
-        self.category_name_input.fill(category_name)
-        self.category_name_input.press("Enter")
-        self.page.get_by_text(f"You've added new category: {category_name}").wait_for()
+    def check_adding_category(self, category):
+        self.input_category.type(category).press_enter()
 
-    def archive_category(self, category_name: str):
-        category = self.page.locator("div.MuiBox-root", has=self.page.locator("span", has_text=category_name))
-        category.locator('button[aria-label="Archive category"]').click()
-        self.archive_dialog.wait_for()
-        self.archive_dialog_button.click()
-        self.page.get_by_text(f"Category {category_name} is archived").wait_for()
+    def check_error_message_adding_empty_name_category(self):
+        self.input_category.type('').press_enter()
+        self.unsuccessful_alert.should(have.text('Allowed category length is from 2 to 50 symbols'))
 
-    def edit_category(self, category_name: str, new_category_name: str):
-        category = self.page.locator("div.MuiBox-root", has=self.page.locator("span", has_text=category_name))
-        category.locator('button[aria-label="Edit category"]').click()
-        self.edit_category_input.click()
-        self.edit_category_input.fill(new_category_name)
-        self.edit_category_input.press("Enter")
-        self.category_succes_edit_popup.wait_for()
+    def check_filling_form(self, name):
+        self.name.set_value(name)
+        self.button_submit.click()
+        self.successful_alert.should(have.text('Profile successfully updated'))
+
+
+profile_page = ProfilePage()

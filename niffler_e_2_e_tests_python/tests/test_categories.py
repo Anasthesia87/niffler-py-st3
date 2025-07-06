@@ -1,0 +1,13 @@
+from selene import be
+from niffler_e_2_e_tests_python.pages.profile_page import profile_page
+
+
+class TestCategories:
+
+    def test_add_category(self, add_category):
+        profile_page.successful_adding()
+
+    def test_empty_name_category(self, authenticated_user):
+        profile_page.menu_button.should(be.clickable).click()
+        profile_page.profile.should(be.clickable).click()
+        profile_page.check_error_message_adding_empty_name_category()

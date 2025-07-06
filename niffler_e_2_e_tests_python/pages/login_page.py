@@ -1,13 +1,26 @@
-from niffler_e_2_e_tests_python.pages.base_page import BasePage
+import allure
+from selene import browser, be, have
 
-class LoginPage(BasePage):
-    def __init__(self, page):
-        super().__init__(page)
-        self.username_input = page.get_by_placeholder("Type your username")
-        self.password_input = page.get_by_placeholder("Type your password")
-        self.login_button = page.get_by_role("button", name="Log in")
 
-    def login(self, username: str, password: str):
-        self.username_input.fill(username)
-        self.password_input.fill(password)
-        self.login_button.click()
+class LoginPage:
+    def __init__(self):
+        self.username = browser.element('input[name=username]')
+        self.password = browser.element('input[name=password]')
+        self.submit_password = browser.element('input[name=passwordSubmit]')
+        self.submit_button = browser.element('button[type=submit]')
+        self.login_button = browser.element('a:nth-child(1)')
+        self.create_new_user_button = browser.element('a:nth-child(2)')
+        self.error_message = browser.element("//p[@class='form__error']")
+
+    @allure.step('UI: sign in user')
+    def sign_in(self, user: str, password: str):
+        self.username.should(be.blank).type(user)
+        self.password.should(be.blank).type(password)
+        self.submit_button.click()
+
+    @allure.step('UI: check text about error')
+    def check_error_message(self):
+        self.error_message.should(have.text('Неверные учетные данные пользователя'))
+
+
+login_page = LoginPage()
