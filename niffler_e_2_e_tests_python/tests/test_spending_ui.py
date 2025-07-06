@@ -42,6 +42,7 @@ class TestSpending:
         )
         assert get_response.status_code == 200, "Трата должна существовать после создания"
 
+    # выполнить после def test_api_spending_creation
     def test_ui_verify_api_created_spending(self, authenticated_user):
         rows = browser.all('.spendings-table tbody tr')
         for row in rows:
@@ -82,6 +83,7 @@ class TestSpending:
         )
         assert check_response.status_code == 404, "Трата должна быть удалена"
 
+    # выполнить после test_api_delete_spending
     def test_ui_verify_api_deleted_spending(self, authenticated_user):
         rows = browser.all('.spendings-table tbody tr')
         for row in rows:
