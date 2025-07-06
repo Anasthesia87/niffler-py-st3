@@ -132,7 +132,8 @@ def add_category(authenticated_user, envs, generate_category_name):
 
 
 @pytest.fixture
-def api_create_spending(envs) -> Dict[str, Any]:
+def api_create_spending(envs):
+
     def _create_spending(
             category: str,
             amount: float,
