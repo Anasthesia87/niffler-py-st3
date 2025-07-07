@@ -125,7 +125,7 @@ def generate_category_name():
 
 
 @pytest.fixture
-def add_category(authenticated_user, envs, generate_category_name):
+def create_category_via_ui(authenticated_user, envs, generate_category_name):
     profile_page.menu_button.should(be.clickable).click()
     profile_page.profile.should(be.clickable).click()
     profile_page.check_adding_category(generate_category_name)
@@ -209,3 +209,103 @@ def api_delete_spending(envs):
             pytest.fail(f"Failed to delete spending {spending_id}: {str(e)}")
 
     return _delete_spending
+
+
+@pytest.fixture
+def api_create_category(envs):
+    """Фикстура для создания категории через API."""
+
+    def _create_category(
+            name: str,
+            username: str = "aslavret",
+            archived: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Создает новую категорию через API
+
+        :param name: Название категории
+        :param username: Имя пользователя (по умолчанию "aslavret")
+        :param archived: Архивировать ли категорию (по умолчанию False)
+        :return: Ответ API в виде словаря
+        """
+
+        API_URL = os.getenv("API_URL")
+        TOKEN = os.getenv("TOKEN")
+
+        if not all([API_URL, TOKEN]):
+            pytest.fail("API_URL or TOKEN environment variables are not set")
+
+        url = f"{API_URL}/categories/add"
+        headers = {
+            "Authorization": f"Bearer {TOKEN}",
+            "Content-Type": "application/json"
+        }
+
+        category_id = str(uuid.uuid4())
+
+        data = {
+            "id": category_id,
+            "name": name,
+            "username": username,
+            "archived": archived
+        }
+
+        try:
+            response = requests.post(url, json=data, headers=headers)
+            response.raise_for_status()
+            category_data = response.json()
+
+            return category_data
+
+
+        except Exception as e:
+
+            pytest.fail(f"Unexpected error when creating category: {str(e)}")
+
+    return _create_category
+
+
+@pytest.fixture
+def api_get_categories(envs):
+    """Фикстура для получения списка категорий."""
+
+    def _get_categories():
+        API_URL = os.getenv("API_URL")
+        TOKEN = os.getenv("TOKEN")
+
+        try:
+            response = requests.get(
+                f"{API_URL}/categories/all",
+                headers={
+                    "Authorization": f"Bearer {TOKEN}",
+                    "Content-Type": "application/json"
+                }
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            pytest.fail(f"Failed to get categories: {str(e)}")
+
+    return _get_categories
+
+
+@pytest.fixture
+def api_update_category(envs):
+    def _update_category(category_data: dict):
+        API_URL = os.getenv("API_URL")
+        TOKEN = os.getenv("TOKEN")
+
+        response = requests.patch(
+            f"{API_URL}/categories/update",
+            json=category_data,
+            headers={
+                "Authorization": f"Bearer {TOKEN}",
+                "Content-Type": "application/json"
+            }
+        )
+        response.raise_for_status()
+        return response.json()
+
+    return _update_category
+
+

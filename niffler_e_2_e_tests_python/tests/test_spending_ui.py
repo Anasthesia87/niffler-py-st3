@@ -94,3 +94,6 @@ class TestSpending:
                 return
 
         logging.info(f"Строка с данными {CATEGORY_2}, {AMOUNT_2}, {CREATE_DATE_2} успешно удалена.")
+
+
+
