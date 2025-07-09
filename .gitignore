@@ -40,3 +40,12 @@ out/
 
 ### gRPC generated files ###
 /niffler-grpc-common/src/generated/**
+
+# Virtual environment
+venv/
+.env/
+.venv/
+
+# Environments
+.env
+*.env
