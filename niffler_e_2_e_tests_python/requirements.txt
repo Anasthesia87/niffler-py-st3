@@ -1,0 +1,5 @@
+selene
+pytest
+requests
+python-dotenv
+faker
