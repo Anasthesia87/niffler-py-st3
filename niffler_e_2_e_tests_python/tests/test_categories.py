@@ -1,5 +1,5 @@
 from selene import be
-from niffler_e_2_e_tests_python.pages.profile_page import profile_page
+from ..pages.profile_page import profile_page
 
 
 class TestCategories:

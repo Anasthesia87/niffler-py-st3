@@ -1,5 +1,5 @@
 from selene import browser, have
-from niffler_e_2_e_tests_python.pages.register_page import registration_page
+from ..pages.register_page import registration_page
 
 
 class TestRegistration:

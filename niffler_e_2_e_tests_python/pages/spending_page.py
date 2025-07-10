@@ -1,4 +1,4 @@
-from selene import browser, be, have, query
+from selene import browser, have
 
 
 class SpendingPage:

@@ -201,11 +201,8 @@ def api_delete_spending(envs):
             "Accept": "application/json"
         }
 
-        try:
-            response = requests.delete(url, headers=headers)
-            response.raise_for_status()
-            return True
-        except HTTPError as e:
-            pytest.fail(f"Failed to delete spending {spending_id}: {str(e)}")
+        response = requests.delete(url, headers=headers)
+        response.raise_for_status()
+        return True
 
     return _delete_spending
