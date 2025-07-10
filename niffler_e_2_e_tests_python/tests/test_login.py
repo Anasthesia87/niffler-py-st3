@@ -1,5 +1,5 @@
-from niffler_e_2_e_tests_python.pages.login_page import login_page
-from niffler_e_2_e_tests_python.pages.spending_page import spending_page
+from ..pages.login_page import login_page
+from ..pages.spending_page import spending_page
 
 
 class TestLogin:

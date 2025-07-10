@@ -1,7 +1,7 @@
 import os
 import requests
 from selene import browser, have
-from niffler_e_2_e_tests_python.pages.spending_page import spending_page
+from ..pages.spending_page import spending_page
 
 CATEGORY_1 = 'Food'
 AMOUNT_1 = '150.50 $'

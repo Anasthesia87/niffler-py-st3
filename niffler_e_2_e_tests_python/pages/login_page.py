@@ -1,6 +1,8 @@
 import allure
 from selene import browser, be, have
 
+browser.config.timeout = 10
+
 
 class LoginPage:
     def __init__(self):
@@ -20,7 +22,7 @@ class LoginPage:
 
     @allure.step('UI: check text about error')
     def check_error_message(self):
-        self.error_message.should(have.text('Неверные учетные данные пользователя'))
+        self.error_message.with_(timeout=15).should(have.text('Неверные учетные данные пользователя'))
 
 
 login_page = LoginPage()
