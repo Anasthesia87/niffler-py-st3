@@ -7,9 +7,9 @@ from dotenv import load_dotenv
 from faker import Faker
 from requests import HTTPError
 from selene import browser, be
-from niffler_e_2_e_tests_python.models.config import Envs
-from niffler_e_2_e_tests_python.pages.login_page import login_page
-from niffler_e_2_e_tests_python.pages.profile_page import profile_page
+from ..models.config import Envs
+from ..pages.login_page import login_page
+from ..pages.profile_page import profile_page
 
 
 @pytest.fixture(scope="session")
