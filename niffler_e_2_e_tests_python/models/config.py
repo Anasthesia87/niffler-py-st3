@@ -9,3 +9,4 @@ class Envs(BaseModel):
     test_password: str
     registration_url: str
     auth_url: str
+    api_auth_url: str
