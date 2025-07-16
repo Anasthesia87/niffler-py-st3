@@ -11,13 +11,13 @@ class RegistrationPage:
         self.error_message = browser.element('.form__error')
 
     def check_registration_message(self):
-        self.registration_message.should(have.text("Congratulations! You've registered"))
+        self.registration_message.with_(timeout=10).should(have.text("Congratulations! You've registered"))
 
     def check_already_exist_user(self, username: str):
-        self.error_message.should(have.text(f'Username `{username}` already exists'))
+        self.error_message.with_(timeout=10).should(have.text(f'Username `{username}` already exists'))
 
     def check_error_message(self, ):
-        self.error_message.should(have.text('Passwords should be equal'))
+        self.error_message.with_(timeout=10).should(have.text('Passwords should be equal'))
 
 
 registration_page = RegistrationPage()

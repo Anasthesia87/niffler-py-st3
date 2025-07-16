@@ -1,4 +1,3 @@
-import allure
 from selene import browser, be, have
 
 browser.config.timeout = 10
@@ -6,6 +5,7 @@ browser.config.timeout = 10
 
 class LoginPage:
     def __init__(self):
+        self.login_header = browser.element('h1.header')
         self.username = browser.element('input[name=username]')
         self.password = browser.element('input[name=password]')
         self.submit_password = browser.element('input[name=passwordSubmit]')
@@ -14,15 +14,17 @@ class LoginPage:
         self.create_new_user_button = browser.element('a:nth-child(2)')
         self.error_message = browser.element("//p[@class='form__error']")
 
-    @allure.step('UI: sign in user')
     def sign_in(self, user: str, password: str):
-        self.username.should(be.blank).type(user)
-        self.password.should(be.blank).type(password)
+        self.username.with_(timeout=10).should(be.blank).type(user)
+        self.password.with_(timeout=10).should(be.blank).type(password)
         self.submit_button.click()
 
-    @allure.step('UI: check text about error')
     def check_error_message(self):
+<<<<<<< HEAD
+        self.error_message.with_(timeout=10).should(have.text('Неверные учетные данные пользователя'))
+=======
         self.error_message.with_(timeout=15).should(have.text('Неверные учетные данные пользователя'))
+>>>>>>> 62d8112e9feacfdc7a972debc749f819bce635c5
 
 
 login_page = LoginPage()
