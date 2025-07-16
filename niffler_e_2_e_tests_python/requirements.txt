@@ -1,0 +1,11 @@
+selene== 2.0.0rc9
+pytest==8.3.4
+requests==2.32.3
+python-dotenv==1.0.1
+Faker==37.4.0
+allure-pytest==2.13.5
+pydantic==2.11.5
+
+
+
+
