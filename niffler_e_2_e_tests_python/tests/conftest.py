@@ -25,7 +25,8 @@ def envs() -> Envs:
         test_password=os.getenv("PASSWORD"),
         registration_url=os.getenv("REGISTRATION_URL"),
         auth_url=os.getenv("AUTH_URL"),
-        api_auth_url=os.getenv("API_AUTH_URL")
+        api_auth_url=os.getenv("API_AUTH_URL"),
+        spend_db_url=os.getenv("SPEND_DB_URL")
     )
 
 

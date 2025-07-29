@@ -51,7 +51,7 @@ class NifflerSpendingClient:
         response.raise_for_status()
         return response.json()
 
-    def get_spending(self, spending_id: str, return_response: bool = False) -> Any:
+    def get_spending(self, spending_id: str) -> Any:
         """
         Получает информацию о расходе по ID
         """
@@ -75,3 +75,32 @@ class NifflerSpendingClient:
         response = self.session.delete(url)
         response.raise_for_status()
         return True
+
+    def update_spending(
+            self,
+            spending_id: str,
+            category: dict,
+            amount: float,
+            description: str,
+            currency: str,
+            spend_date: str,
+            username: str = "aslavret"
+    ) -> Dict[str, Any]:
+        """
+        Обновляет информацию о расходе по ID
+        """
+        url = urljoin(self.base_url, "/api/spends/edit")
+
+        data = {
+            "id": spending_id,
+            "spendDate": spend_date,
+            "category": category,
+            "currency": currency,
+            "amount": amount,
+            "description": description,
+            "username": username
+        }
+
+        response = self.session.patch(url, json=data)
+        response.raise_for_status()
+        return response.json()

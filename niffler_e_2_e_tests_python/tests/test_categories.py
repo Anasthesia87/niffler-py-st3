@@ -1,5 +1,9 @@
+import os
+from uuid import UUID
+from sqlmodel import Session, select
 from selene import be
 from ..pages.profile_page import profile_page
+from ..databases.spend_db import SpendDb, Category
 
 
 class TestCategories:
@@ -123,3 +127,88 @@ class TestCategories:
         assert found is not None, "Категория должна присутствовать в списке"
         assert found["archived"], "Статус архивации должен сохраняться в списке"
         assert found["username"] == "aslavret", "Имя пользователя должно соответствовать"
+
+    def test_db_delete_category(self, categories_client, generate_category_name):
+        category_name = generate_category_name
+        category = categories_client.add_category(
+            name=category_name,
+            username="aslavret",
+            archived=False
+        )
+        category_id = category["id"]
+
+        assert category_id is not None
+
+        db = SpendDb(os.getenv("SPEND_DB_URL"))
+        db.delete_category(category_id)
+
+        with Session(db.engine) as session:
+            deleted_category = session.get(Category, category_id)
+            assert deleted_category is None, "Категория должна быть удалена из базы данных"
+
+    def test_db_category_creation(self, categories_client, generate_category_name):
+        category_name = generate_category_name
+        category = categories_client.add_category(
+            name=category_name,
+            username="aslavret",
+            archived=False
+        )
+        category_id = category["id"]
+
+        assert category_id is not None, "Категория не была создана через API"
+
+        db = SpendDb(os.getenv("SPEND_DB_URL"))
+
+        with Session(db.engine) as session:
+            statement = select(Category).where(Category.username == "aslavret")
+            user_categories = session.exec(statement).all()
+
+            assert any(str(cat.id) == str(category_id) for cat in user_categories), (
+                f"Категория {category_id} не найдена в списке. "
+                f"Имена категорий в списке: {[cat.name for cat in user_categories]}"
+            )
+
+            db = SpendDb(os.getenv("SPEND_DB_URL"))
+            db.delete_category(category_id)
+
+    def test_db_category_update(self, categories_client, generate_category_name):
+        original_name = f"ORIG_{generate_category_name[:15]}"
+        category = categories_client.add_category(
+            name=original_name,
+            username="aslavret",
+            archived=False
+        )
+        category_id = category["id"]
+
+        new_name = f"UPDATED_{generate_category_name[:10]}"
+        update_payload = {
+            "id": category_id,
+            "name": new_name,
+            "username": "aslavret",
+            "archived": True
+        }
+
+        updated_category = categories_client.update_category(update_payload)
+
+        db = SpendDb(os.getenv("SPEND_DB_URL"))
+        with Session(db.engine) as session:
+            db_category = session.get(Category, category_id)
+
+            assert db_category is not None, "Категория не найдена в БД"
+            assert db_category.name == new_name, "Название категории не обновилось в БД"
+            assert db_category.username == "aslavret", "Имя пользователя изменилось в БД"
+            assert db_category.archived is True, "Статус архивации не обновился в БД"
+
+            user_categories = session.exec(
+                select(Category).where(Category.username == "aslavret")
+            ).all()
+
+            assert any(
+                cat.id == UUID(category_id)
+                and cat.name == new_name
+                and cat.archived is True
+                for cat in user_categories
+            ), "Обновленная категория не найдена"
+
+            db = SpendDb(os.getenv("SPEND_DB_URL"))
+            db.delete_category(category_id)
