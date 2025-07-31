@@ -40,3 +40,8 @@ out/
 
 ### gRPC generated files ###
 /niffler-grpc-common/src/generated/**
+
+# Allure reports
+allure-results/
+allure-report/
+.allure/

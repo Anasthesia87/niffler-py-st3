@@ -3,7 +3,6 @@ import time
 import uuid
 from typing import Dict, Any, List
 import requests
-import pytest
 from dotenv import load_dotenv
 from faker import Faker
 from selene import browser, be
@@ -12,12 +11,54 @@ from ..clients.spending_client import NifflerSpendingClient
 from ..models.config import Envs
 from ..pages.login_page import login_page
 from ..pages.profile_page import profile_page
+import allure
+import pytest
+from allure_commons.reporter import AllureReporter
+from allure_commons.types import AttachmentType
+from allure_pytest.listener import AllureListener
+from pytest import Item, FixtureDef, FixtureRequest
+
+
+def allure_logger(config) -> AllureReporter:
+    listener: AllureListener = config.pluginmanager.get_plugin("allure_listener")
+    return listener.allure_logger
+
+
+@pytest.hookimpl(hookwrapper=True, trylast=True)
+def pytest_runtest_call(item: Item):
+    yield
+    allure.dynamic.title(" ".join(item.name.split("_")[1:]).title())
+
+
+@pytest.hookimpl(hookwrapper=True, trylast=True)
+def pytest_fixture_setup(fixturedef: FixtureDef, request: FixtureRequest):
+    yield
+    logger = allure_logger(request.config)
+    item = logger.get_last_item()
+    scope_letter = fixturedef.scope[0].upper()
+    item.name = f"[{scope_letter}] " + " ".join(fixturedef.argname.split("_")).title()
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """
+    Получает статус теста и делает скриншот при падении.
+    """
+    outcome = yield
+    report = outcome.get_result()
+
+    if report.when == "call" and report.failed:
+        allure.attach(
+            browser.driver.get_screenshot_as_png(),
+            name="screenshot_on_failure",
+            attachment_type=allure.attachment_type.PNG,
+        )
 
 
 @pytest.fixture(scope="session")
 def envs() -> Envs:
     load_dotenv()
-    return Envs(
+    envs_instance = Envs(
         frontend_url=os.getenv("FRONTEND_URL"),
         gateway_url=os.getenv("API_URL"),
         profile_url=os.getenv("PROFILE_URL"),
@@ -28,6 +69,8 @@ def envs() -> Envs:
         api_auth_url=os.getenv("API_AUTH_URL"),
         spend_db_url=os.getenv("SPEND_DB_URL")
     )
+    allure.attach(envs_instance.model_dump_json(indent=2), name="envs.json", attachment_type=AttachmentType.JSON)
+    return envs_instance
 
 
 @pytest.fixture()
@@ -147,6 +190,7 @@ def get_token_for_api_tests(envs: Envs, authenticated_user):
     for cookie in browser.driver.get_cookies():
         if any(name in cookie['name'].lower() for name in ['jwt', 'token', 'auth', 'access']):
             token = cookie['value']
+            allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
             break
 
     # Если не нашли в куках, пробуем localStorage
@@ -156,6 +200,7 @@ def get_token_for_api_tests(envs: Envs, authenticated_user):
             "window.localStorage.getItem('authToken') || "
             "window.localStorage.getItem('accessToken');"
         )
+        allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
 
     if not token:
         # Делаем скриншот для диагностики

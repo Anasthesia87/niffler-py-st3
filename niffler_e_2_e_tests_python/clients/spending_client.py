@@ -1,8 +1,12 @@
 import logging
 from urllib.parse import urljoin
+import allure
 import requests
 import uuid
 from typing import Dict, Any
+from allure_commons.types import AttachmentType
+from requests import Response
+from requests_toolbelt.utils.dump import dump_response
 
 
 class NifflerSpendingClient:
@@ -17,7 +21,14 @@ class NifflerSpendingClient:
             'Authorization': auth_token,
             'Content-Type': 'application/json'
         })
+        self.session.hooks["response"].append(self.attach_response)
 
+    @staticmethod
+    def attach_response(response: Response, *args, **kwargs):
+        attachment_name = response.request.method + " " + response.request.url
+        allure.attach(dump_response(response), attachment_name, attachment_type=AttachmentType.TEXT)
+
+    @allure.step("Создать новую запись о расходе")
     def create_spending(
             self,
             category: str,
@@ -27,9 +38,6 @@ class NifflerSpendingClient:
             spend_date: str = "2023-01-01",
             username: str = "aslavret"
     ) -> Dict[str, Any]:
-        """
-        Создает новую запись о расходе
-        """
         url = urljoin(self.base_url, "api/spends/add")
 
         data = {
@@ -51,10 +59,8 @@ class NifflerSpendingClient:
         response.raise_for_status()
         return response.json()
 
+    @allure.step("Получить информацию о расходе")
     def get_spending(self, spending_id: str) -> Any:
-        """
-        Получает информацию о расходе по ID
-        """
         url = urljoin(self.base_url, f"/api/spends/{spending_id}")
 
         try:
@@ -67,15 +73,14 @@ class NifflerSpendingClient:
             logging.error(f"Error getting spending {spending_id}: {str(e)}")
             raise
 
+    @allure.step("Удалить запись о расходе")
     def delete_spending(self, spending_id: str) -> bool:
-        """
-        Удаляет запись о расходе
-        """
         url = urljoin(self.base_url, f"/api/spends/remove?ids={spending_id}")
         response = self.session.delete(url)
         response.raise_for_status()
         return True
 
+    @allure.step("Обновить информацию о расходе")
     def update_spending(
             self,
             spending_id: str,
@@ -86,9 +91,6 @@ class NifflerSpendingClient:
             spend_date: str,
             username: str = "aslavret"
     ) -> Dict[str, Any]:
-        """
-        Обновляет информацию о расходе по ID
-        """
         url = urljoin(self.base_url, "/api/spends/edit")
 
         data = {
