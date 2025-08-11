@@ -13,7 +13,7 @@ class NifflerCategoriesClient:
         self.session = requests.Session()
         self.session.headers.update({
             'Accept': 'application/json',
-            'Authorization': auth_token,  # Уже содержит 'Bearer '
+            'Authorization': auth_token,
             'Content-Type': 'application/json'
         })
         self.session.hooks["response"].append(self.attach_response)

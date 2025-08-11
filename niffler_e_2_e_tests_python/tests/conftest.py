@@ -1,13 +1,15 @@
 import os
-import time
 import uuid
 from typing import Dict, Any, List
 import requests
 from dotenv import load_dotenv
 from faker import Faker
 from selene import browser, be
+from ..clients.auth_client import TokenManager
 from ..clients.categories_client import NifflerCategoriesClient
+from ..clients.currencies_client import NifflerCurrencyClient
 from ..clients.spending_client import NifflerSpendingClient
+from ..clients.statistics_client import NifflerStatisticsClient
 from ..models.config import Envs
 from ..pages.login_page import login_page
 from ..pages.profile_page import profile_page
@@ -167,47 +169,47 @@ def create_category_via_ui(authenticated_user, envs, generate_category_name):
     profile_page.check_adding_category(generate_category_name)
 
 
-@pytest.fixture
-def get_token_for_api_tests(envs: Envs, authenticated_user):
-    # Диагностика - выводим все куки и localStorage
-    time.sleep(3)
-    print("\n=== Cookies ===")
-    for cookie in browser.driver.get_cookies():
-        print(f"{cookie['name']}: {cookie['value'][:50]}...")
-
-    print("\n=== LocalStorage ===")
-    items = browser.driver.execute_script(
-        "return Object.keys(window.localStorage).map(key => "
-        "`${key}: ${window.localStorage.getItem(key)}`);"
-    )
-    for item in items:
-        print(item[:100] + "..." if len(item) > 100 else item)
-
-    # Поиск токена в разных местах
-    token = None
-
-    # Пробуем получить из кук
-    for cookie in browser.driver.get_cookies():
-        if any(name in cookie['name'].lower() for name in ['jwt', 'token', 'auth', 'access']):
-            token = cookie['value']
-            allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
-            break
-
-    # Если не нашли в куках, пробуем localStorage
-    if not token:
-        token = browser.driver.execute_script(
-            "return window.localStorage.getItem('id_token') || "
-            "window.localStorage.getItem('authToken') || "
-            "window.localStorage.getItem('accessToken');"
-        )
-        allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
-
-    if not token:
-        # Делаем скриншот для диагностики
-        browser.driver.save_screenshot("auth_failed.png")
-        pytest.fail("Token not found after authentication. Check auth_failed.png and console output")
-
-    return f"Bearer {token}"
+# @pytest.fixture
+# def get_token_for_api_tests(envs: Envs, authenticated_user):
+#     # Диагностика - выводим все куки и localStorage
+#     time.sleep(3)
+#     print("\n=== Cookies ===")
+#     for cookie in browser.driver.get_cookies():
+#         print(f"{cookie['name']}: {cookie['value'][:50]}...")
+#
+#     print("\n=== LocalStorage ===")
+#     items = browser.driver.execute_script(
+#         "return Object.keys(window.localStorage).map(key => "
+#         "`${key}: ${window.localStorage.getItem(key)}`);"
+#     )
+#     for item in items:
+#         print(item[:100] + "..." if len(item) > 100 else item)
+#
+#     # Поиск токена в разных местах
+#     token = None
+#
+#     # Пробуем получить из кук
+#     for cookie in browser.driver.get_cookies():
+#         if any(name in cookie['name'].lower() for name in ['jwt', 'token', 'auth', 'access']):
+#             token = cookie['value']
+#             allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
+#             break
+#
+#     # Если не нашли в куках, пробуем localStorage
+#     if not token:
+#         token = browser.driver.execute_script(
+#             "return window.localStorage.getItem('id_token') || "
+#             "window.localStorage.getItem('authToken') || "
+#             "window.localStorage.getItem('accessToken');"
+#         )
+#         allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
+#
+#     if not token:
+#         # Делаем скриншот для диагностики
+#         browser.driver.save_screenshot("auth_failed.png")
+#         pytest.fail("Token not found after authentication. Check auth_failed.png and console output")
+#
+#     return f"Bearer {token}"
 
 
 @pytest.fixture
@@ -366,9 +368,24 @@ def spending_client(get_token_for_api_tests):
     """Фикстура для клиента расходов с готовым токеном"""
     return NifflerSpendingClient(
         base_url="http://gateway.niffler.dc:8090/api",
-        auth_token=get_token_for_api_tests  # Уже содержит "Bearer "
+        auth_token=get_token_for_api_tests
     )
 
+
+@pytest.fixture
+def currencies_client(get_token_for_api_tests):
+    """Фикстура для клиента расходов с готовым токеном"""
+    return NifflerCurrencyClient(
+        base_url="http://gateway.niffler.dc:8090/api",
+        auth_token=get_token_for_api_tests
+    )
+
+@pytest.fixture
+def statistics_client(get_token_for_api_tests):
+    return NifflerStatisticsClient(
+        base_url="http://gateway.niffler.dc:8090/api",
+        auth_token=get_token_for_api_tests
+    )
 
 @pytest.fixture
 def api_get_current_user(envs: Envs, get_token_for_api_tests: str):
@@ -412,3 +429,9 @@ def api_update_user(envs: Envs, get_token_for_api_tests: str):
         return response.json()
 
     return _update_user
+
+
+@pytest.fixture
+def get_token_for_api_tests(envs: Envs, authenticated_user) -> str:
+    token_manager = TokenManager(envs=envs, driver=browser.driver)
+    return token_manager.get_token()
