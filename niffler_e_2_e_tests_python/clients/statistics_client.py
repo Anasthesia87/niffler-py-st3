@@ -21,7 +21,7 @@ class NifflerStatisticsClient:
     def get_total_statistics(self):
         """Получить общую статистику расходов"""
         response = requests.get(
-            f"{self.base_url}/api/v2/stat/total",
+            f"{self.base_url}/v2/stat/total",
             headers=self.headers
         )
         return response
