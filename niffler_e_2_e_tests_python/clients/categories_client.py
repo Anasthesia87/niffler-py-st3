@@ -9,13 +9,6 @@ from ..core.base_session import BaseSession
 
 class NifflerCategoriesClient:
     def __init__(self, session: BaseSession, auth_token: str):
-        """
-        Инициализация клиента для работы с категориями
-
-        Args:
-            session: Готовая сессия BaseSession (уже содержит base_url)
-            auth_token: Токен авторизации (Bearer token)
-        """
         self.session = session
         self.session.headers.update({
             'Authorization': auth_token,
