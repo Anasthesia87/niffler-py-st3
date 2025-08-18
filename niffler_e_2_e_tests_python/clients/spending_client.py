@@ -1,23 +1,19 @@
 import logging
-from urllib.parse import urljoin
+import allure
 import requests
-import uuid
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+from niffler_e_2_e_tests_python.core.base_session import BaseSession
 
 
 class NifflerSpendingClient:
-    def __init__(self, base_url: str, auth_token: str):
-        """
-        Клиент для работы с расходами через API
-        """
-        self.base_url = base_url.rstrip('/')
-        self.session = requests.Session()
+    def __init__(self, session: BaseSession, auth_token: str):
+        self.session = session
         self.session.headers.update({
-            'Accept': 'application/json',
             'Authorization': auth_token,
             'Content-Type': 'application/json'
         })
 
+    @allure.step("Создать новую запись о расходе")
     def create_spending(
             self,
             category: str,
@@ -27,16 +23,9 @@ class NifflerSpendingClient:
             spend_date: str = "2023-01-01",
             username: str = "aslavret"
     ) -> Dict[str, Any]:
-        """
-        Создает новую запись о расходе
-        """
-        url = urljoin(self.base_url, "api/spends/add")
-
         data = {
-            "id": str(uuid.uuid4()),
             "spendDate": spend_date,
             "category": {
-                "id": str(uuid.uuid4()),
                 "name": category,
                 "username": username,
                 "archived": False
@@ -46,51 +35,34 @@ class NifflerSpendingClient:
             "description": description,
             "username": username
         }
+        return self.session.post("spends/add", json=data).json()
 
-        response = self.session.post(url, json=data)
-        response.raise_for_status()
-        return response.json()
-
-    def get_spending(self, spending_id: str) -> Any:
-        """
-        Получает информацию о расходе по ID
-        """
-        url = urljoin(self.base_url, f"/api/spends/{spending_id}")
-
+    @allure.step("Получить информацию о расходе")
+    def get_spending(self, spending_id: str) -> Optional[Dict]:
         try:
-            response = self.session.get(url)
+            response = self.session.get(f"spends/{spending_id}")
             if response.status_code == 404:
                 return None
-            response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
             logging.error(f"Error getting spending {spending_id}: {str(e)}")
             raise
 
-    def delete_spending(self, spending_id: str) -> bool:
-        """
-        Удаляет запись о расходе
-        """
-        url = urljoin(self.base_url, f"/api/spends/remove?ids={spending_id}")
-        response = self.session.delete(url)
-        response.raise_for_status()
-        return True
+    @allure.step("Удалить запись о расходе")
+    def delete_spending(self, spending_id: str) -> None:
+        self.session.delete(f"spends/remove?ids={spending_id}")
 
+    @allure.step("Обновить информацию о расходе")
     def update_spending(
             self,
             spending_id: str,
-            category: dict,
+            category: Dict[str, Any],
             amount: float,
             description: str,
             currency: str,
             spend_date: str,
             username: str = "aslavret"
     ) -> Dict[str, Any]:
-        """
-        Обновляет информацию о расходе по ID
-        """
-        url = urljoin(self.base_url, "/api/spends/edit")
-
         data = {
             "id": spending_id,
             "spendDate": spend_date,
@@ -100,7 +72,4 @@ class NifflerSpendingClient:
             "description": description,
             "username": username
         }
-
-        response = self.session.patch(url, json=data)
-        response.raise_for_status()
-        return response.json()
+        return self.session.patch("spends/edit", json=data).json()

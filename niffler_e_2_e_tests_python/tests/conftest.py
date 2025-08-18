@@ -1,23 +1,68 @@
 import os
-import time
 import uuid
 from typing import Dict, Any, List
 import requests
-import pytest
 from dotenv import load_dotenv
 from faker import Faker
 from selene import browser, be
+from ..clients.auth_client import TokenManager
 from ..clients.categories_client import NifflerCategoriesClient
+from ..clients.currencies_client import NifflerCurrencyClient
 from ..clients.spending_client import NifflerSpendingClient
+from ..clients.statistics_client import NifflerStatisticsClient
+from ..clients.users_client import NifflerUsersClient
+from ..core.base_session import BaseSession
 from ..models.config import Envs
 from ..pages.login_page import login_page
 from ..pages.profile_page import profile_page
+import allure
+import pytest
+from allure_commons.reporter import AllureReporter
+from allure_commons.types import AttachmentType
+from allure_pytest.listener import AllureListener
+from pytest import Item, FixtureDef, FixtureRequest
+
+
+def allure_logger(config) -> AllureReporter:
+    listener: AllureListener = config.pluginmanager.get_plugin("allure_listener")
+    return listener.allure_logger
+
+
+@pytest.hookimpl(hookwrapper=True, trylast=True)
+def pytest_runtest_call(item: Item):
+    yield
+    allure.dynamic.title(" ".join(item.name.split("_")[1:]).title())
+
+
+@pytest.hookimpl(hookwrapper=True, trylast=True)
+def pytest_fixture_setup(fixturedef: FixtureDef, request: FixtureRequest):
+    yield
+    logger = allure_logger(request.config)
+    item = logger.get_last_item()
+    scope_letter = fixturedef.scope[0].upper()
+    item.name = f"[{scope_letter}] " + " ".join(fixturedef.argname.split("_")).title()
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """
+    Получает статус теста и делает скриншот при падении.
+    """
+    outcome = yield
+    report = outcome.get_result()
+
+    if report.when == "call" and report.failed:
+        allure.attach(
+            browser.driver.get_screenshot_as_png(),
+            name="screenshot_on_failure",
+            attachment_type=allure.attachment_type.PNG,
+        )
 
 
 @pytest.fixture(scope="session")
 def envs() -> Envs:
     load_dotenv()
-    return Envs(
+    envs_instance = Envs(
         frontend_url=os.getenv("FRONTEND_URL"),
         gateway_url=os.getenv("API_URL"),
         profile_url=os.getenv("PROFILE_URL"),
@@ -28,6 +73,8 @@ def envs() -> Envs:
         api_auth_url=os.getenv("API_AUTH_URL"),
         spend_db_url=os.getenv("SPEND_DB_URL")
     )
+    allure.attach(envs_instance.model_dump_json(indent=2), name="envs.json", attachment_type=AttachmentType.JSON)
+    return envs_instance
 
 
 @pytest.fixture()
@@ -125,47 +172,6 @@ def create_category_via_ui(authenticated_user, envs, generate_category_name):
 
 
 @pytest.fixture
-def get_token_for_api_tests(envs: Envs, authenticated_user):
-    # Диагностика - выводим все куки и localStorage
-    time.sleep(3)
-    print("\n=== Cookies ===")
-    for cookie in browser.driver.get_cookies():
-        print(f"{cookie['name']}: {cookie['value'][:50]}...")
-
-    print("\n=== LocalStorage ===")
-    items = browser.driver.execute_script(
-        "return Object.keys(window.localStorage).map(key => "
-        "`${key}: ${window.localStorage.getItem(key)}`);"
-    )
-    for item in items:
-        print(item[:100] + "..." if len(item) > 100 else item)
-
-    # Поиск токена в разных местах
-    token = None
-
-    # Пробуем получить из кук
-    for cookie in browser.driver.get_cookies():
-        if any(name in cookie['name'].lower() for name in ['jwt', 'token', 'auth', 'access']):
-            token = cookie['value']
-            break
-
-    # Если не нашли в куках, пробуем localStorage
-    if not token:
-        token = browser.driver.execute_script(
-            "return window.localStorage.getItem('id_token') || "
-            "window.localStorage.getItem('authToken') || "
-            "window.localStorage.getItem('accessToken');"
-        )
-
-    if not token:
-        # Делаем скриншот для диагностики
-        browser.driver.save_screenshot("auth_failed.png")
-        pytest.fail("Token not found after authentication. Check auth_failed.png and console output")
-
-    return f"Bearer {token}"
-
-
-@pytest.fixture
 def api_get_all_users(envs: Envs, get_token_for_api_tests: str):
     def _get_all_users_with_token(
             page: int = 0,
@@ -204,21 +210,11 @@ def api_get_all_users(envs: Envs, get_token_for_api_tests: str):
 
 @pytest.fixture
 def api_create_category(envs):
-    """Фикстура для создания категории через API."""
-
     def _create_category(
             name: str,
             username: str = "aslavret",
             archived: bool = False,
     ) -> Dict[str, Any]:
-        """
-        Создает новую категорию через API
-
-        :param name: Название категории
-        :param username: Имя пользователя (по умолчанию "aslavret")
-        :param archived: Архивировать ли категорию (по умолчанию False)
-        :return: Ответ API в виде словаря
-        """
 
         API_URL = os.getenv("API_URL")
         TOKEN = os.getenv("TOKEN")
@@ -258,8 +254,6 @@ def api_create_category(envs):
 
 @pytest.fixture
 def api_get_categories(envs):
-    """Фикстура для получения списка категорий."""
-
     def _get_categories():
         API_URL = os.getenv("API_URL")
         TOKEN = os.getenv("TOKEN")
@@ -307,21 +301,57 @@ def api_update_category(envs):
     return _update_category
 
 
+@pytest.fixture(scope="session")
+def colored_api_session(envs: Envs) -> BaseSession:
+    """Фикстура API сессии"""
+    return BaseSession(
+        base_url=envs.gateway_url,
+        use_colored_templates=True
+    )
+
+
 @pytest.fixture
-def categories_client(get_token_for_api_tests):
-    """Фикстура для клиента категорий с готовым токеном"""
+def categories_client(get_token_for_api_tests, colored_api_session) -> NifflerCategoriesClient:
+    """Фикстура клиента для работы с категориями"""
     return NifflerCategoriesClient(
-        base_url="http://gateway.niffler.dc:8090/api",
+        session=colored_api_session,
         auth_token=get_token_for_api_tests
     )
 
 
 @pytest.fixture
-def spending_client(get_token_for_api_tests):
-    """Фикстура для клиента расходов с готовым токеном"""
+def spending_client(get_token_for_api_tests, colored_api_session) -> NifflerSpendingClient:
+    """Фикстура клиента для работы с расходами"""
     return NifflerSpendingClient(
-        base_url="http://gateway.niffler.dc:8090/api",
-        auth_token=get_token_for_api_tests  # Уже содержит "Bearer "
+        session=colored_api_session,
+        auth_token=get_token_for_api_tests
+    )
+
+
+@pytest.fixture
+def currencies_client(get_token_for_api_tests, colored_api_session) -> NifflerCurrencyClient:
+    """Фикстура клиента для работы с валютами"""
+    return NifflerCurrencyClient(
+        session=colored_api_session,
+        auth_token=get_token_for_api_tests
+    )
+
+
+@pytest.fixture
+def statistics_client(get_token_for_api_tests, colored_api_session) -> NifflerStatisticsClient:
+    """Фикстура клиента для работы со статистикой"""
+    return NifflerStatisticsClient(
+        session=colored_api_session,
+        auth_token=get_token_for_api_tests
+    )
+
+
+@pytest.fixture
+def users_client(get_token_for_api_tests, colored_api_session) -> NifflerUsersClient:
+    """Фикстура клиента для работы с пользователями"""
+    return NifflerUsersClient(
+        session=colored_api_session,
+        auth_token=get_token_for_api_tests
     )
 
 
@@ -367,3 +397,9 @@ def api_update_user(envs: Envs, get_token_for_api_tests: str):
         return response.json()
 
     return _update_user
+
+
+@pytest.fixture
+def get_token_for_api_tests(envs: Envs, authenticated_user) -> str:
+    token_manager = TokenManager(envs=envs, driver=browser.driver)
+    return token_manager.get_token()

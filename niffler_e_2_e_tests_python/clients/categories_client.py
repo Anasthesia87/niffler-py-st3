@@ -1,57 +1,38 @@
-from urllib.parse import urljoin
-import requests
-from typing import Dict, List, Any
+import uuid
+from typing import List, Dict, Any
+import allure
+from ..core.base_session import BaseSession
 
 
 class NifflerCategoriesClient:
-    def __init__(self, base_url: str, auth_token: str):
-        self.base_url = base_url.rstrip('/')
-        self.session = requests.Session()
+    def __init__(self, session: BaseSession, auth_token: str):
+        self.session = session
         self.session.headers.update({
-            'Accept': 'application/json',
-            'Authorization': auth_token,  # Уже содержит 'Bearer '
+            'Authorization': auth_token,
             'Content-Type': 'application/json'
         })
 
+    @allure.step("Получить все категории")
     def get_categories(self) -> List[Dict]:
-        response = self.session.get(urljoin(self.base_url, "/api/categories/all"))
+        response = self.session.get("categories/all")
         response.raise_for_status()
         return response.json()
 
-    def add_category(
-            self,
-            name: str,
-            username: str = "aslavret",
-            archived: bool = False,
-            category_id: str = None
-    ) -> Dict[str, Any]:
-        """Создает новую категорию"""
-        if not category_id:
-            import uuid
-            category_id = str(uuid.uuid4())
-
+    @allure.step("Добавить новую категорию")
+    def add_category(self, name: str, **kwargs) -> Dict[str, Any]:
         data = {
-            "id": category_id,
+            "id": str(uuid.uuid4()),
             "name": name,
-            "username": username,
-            "archived": archived
+            **kwargs
         }
-
-        url = urljoin(self.base_url, "/api/categories/add")
-        response = self.session.post(url, json=data)
-
+        response = self.session.post("categories/add", json=data)
         response.raise_for_status()
         return response.json()
 
+    @allure.step("Обновить категорию")
     def update_category(self, category_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Обновляет существующую категорию
-        """
         if 'id' not in category_data:
             raise ValueError("Category data must contain 'id' field")
-
-        url = urljoin(self.base_url, "/api/categories/update")
-        response = self.session.patch(url, json=category_data)
-
+        response = self.session.patch("categories/update", json=category_data)
         response.raise_for_status()
         return response.json()
