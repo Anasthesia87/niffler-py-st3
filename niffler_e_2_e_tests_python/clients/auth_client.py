@@ -62,5 +62,3 @@ class TokenManager:
             with allure.step("Токен успешно получен"):
                 allure.attach(token, name="auth_token.txt", attachment_type=AttachmentType.TEXT)
                 return f"Bearer {token}"
-
-

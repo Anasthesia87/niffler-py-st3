@@ -1,22 +1,24 @@
-import requests
-from typing import Optional
+from ..core.base_session import BaseSession
+from typing import Dict, Optional
+import allure
 
 
 class NifflerUsersClient:
-    def __init__(self, base_url: str, auth_token: str):
-        self.base_url = base_url.rstrip('/')
-        self.headers = {
-            "Authorization": auth_token,
-            "accept": "application/json"
-        }
+    def __init__(self, session: BaseSession, auth_token: str):
+        self.session = session
+        self.session.headers.update({
+            'Authorization': auth_token,
+            'accept': 'application/json'
+        })
 
+    @allure.step("Получить список пользователей с пагинацией")
     def get_all_users(
             self,
             page: int = 0,
             size: int = 10,
             sort: Optional[str] = None,
             search_query: Optional[str] = None
-    ) -> requests.Response:
+    ) -> Dict:
         """Получить список пользователей с пагинацией и сортировкой"""
         params = {
             "page": page,
@@ -29,8 +31,6 @@ class NifflerUsersClient:
         if search_query:
             params["searchQuery"] = search_query
 
-        return requests.get(
-            f"{self.base_url}/v2/users/all",
-            headers=self.headers,
-            params=params
-        )
+        response = self.session.get("v2/users/all", params=params)
+        response.raise_for_status()
+        return response.json()

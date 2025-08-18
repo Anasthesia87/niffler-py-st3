@@ -12,7 +12,6 @@ from ..clients.spending_client import NifflerSpendingClient
 from ..clients.statistics_client import NifflerStatisticsClient
 from ..clients.users_client import NifflerUsersClient
 from ..core.base_session import BaseSession
-from ..core.http_logger import create_session
 from ..models.config import Envs
 from ..pages.login_page import login_page
 from ..pages.profile_page import profile_page
@@ -310,6 +309,7 @@ def colored_api_session(envs: Envs) -> BaseSession:
         use_colored_templates=True
     )
 
+
 @pytest.fixture
 def categories_client(get_token_for_api_tests, colored_api_session) -> NifflerCategoriesClient:
     """Фикстура клиента для работы с категориями"""
@@ -317,6 +317,7 @@ def categories_client(get_token_for_api_tests, colored_api_session) -> NifflerCa
         session=colored_api_session,
         auth_token=get_token_for_api_tests
     )
+
 
 @pytest.fixture
 def spending_client(get_token_for_api_tests, colored_api_session) -> NifflerSpendingClient:
@@ -326,6 +327,7 @@ def spending_client(get_token_for_api_tests, colored_api_session) -> NifflerSpen
         auth_token=get_token_for_api_tests
     )
 
+
 @pytest.fixture
 def currencies_client(get_token_for_api_tests, colored_api_session) -> NifflerCurrencyClient:
     """Фикстура клиента для работы с валютами"""
@@ -333,6 +335,7 @@ def currencies_client(get_token_for_api_tests, colored_api_session) -> NifflerCu
         session=colored_api_session,
         auth_token=get_token_for_api_tests
     )
+
 
 @pytest.fixture
 def statistics_client(get_token_for_api_tests, colored_api_session) -> NifflerStatisticsClient:
@@ -342,6 +345,7 @@ def statistics_client(get_token_for_api_tests, colored_api_session) -> NifflerSt
         auth_token=get_token_for_api_tests
     )
 
+
 @pytest.fixture
 def users_client(get_token_for_api_tests, colored_api_session) -> NifflerUsersClient:
     """Фикстура клиента для работы с пользователями"""
@@ -349,46 +353,6 @@ def users_client(get_token_for_api_tests, colored_api_session) -> NifflerUsersCl
         session=colored_api_session,
         auth_token=get_token_for_api_tests
     )
-
-
-# @pytest.fixture
-# def categories_client(get_token_for_api_tests, envs) -> NifflerCategoriesClient:
-#     return NifflerCategoriesClient(
-#         base_url=envs.gateway_url,
-#         auth_token=get_token_for_api_tests
-#     )
-#
-#
-# @pytest.fixture
-# def spending_client(get_token_for_api_tests, envs) -> NifflerSpendingClient:
-#     return NifflerSpendingClient(
-#         base_url=envs.gateway_url,
-#         auth_token=get_token_for_api_tests
-#     )
-#
-#
-# @pytest.fixture
-# def currencies_client(get_token_for_api_tests, envs) -> NifflerCurrencyClient:
-#     return NifflerCurrencyClient(
-#         base_url=envs.gateway_url,
-#         auth_token=get_token_for_api_tests
-#     )
-#
-#
-# @pytest.fixture
-# def statistics_client(get_token_for_api_tests, envs) -> NifflerStatisticsClient:
-#     return NifflerStatisticsClient(
-#         base_url=envs.gateway_url,
-#         auth_token=get_token_for_api_tests
-#     )
-#
-#
-# @pytest.fixture
-# def users_client(get_token_for_api_tests, envs) -> NifflerUsersClient:
-#     return NifflerUsersClient(
-#         base_url=envs.gateway_url,
-#         auth_token=get_token_for_api_tests
-#     )
 
 
 @pytest.fixture
