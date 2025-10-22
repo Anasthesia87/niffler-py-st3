@@ -10,3 +10,5 @@ class Envs(BaseModel):
     registration_url: str
     auth_url: str
     api_auth_url: str
+    kafka_address: str
+    # kafka_bootstrap_servers: str

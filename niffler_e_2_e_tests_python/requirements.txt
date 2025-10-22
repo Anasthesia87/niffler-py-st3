@@ -8,6 +8,12 @@ pydantic==2.11.5
 psycopg2-binary==2.9.10
 SQLAlchemy==2.0.41
 sqlmodel==0.0.24
+curlify==3.0.0
+Jinja2==3.1.6
+Faker==33.3.0
+grpcio-tools==1.69.0
+
+
 
 
 

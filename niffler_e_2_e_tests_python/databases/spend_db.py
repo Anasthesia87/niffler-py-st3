@@ -3,7 +3,7 @@ import allure
 from allure_commons.types import AttachmentType
 from sqlalchemy import create_engine, Engine, event
 from sqlmodel import Session, select
-from ..models.spend import Category
+from niffler_e_2_e_tests_python.models.spend import Category
 
 
 class SpendDb:

@@ -1,7 +1,7 @@
 import uuid
 import allure
 from faker import Faker
-from ..pages.profile_page import profile_page
+from niffler_e_2_e_tests_python.pages.profile_page import profile_page
 
 
 @allure.epic("Профиль пользователя")

@@ -1,5 +1,5 @@
 import allure
-from ..core.base_session import BaseSession
+from niffler_e_2_e_tests_python.core.base_session import BaseSession
 from typing import Dict
 
 

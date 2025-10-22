@@ -5,16 +5,17 @@ import requests
 from dotenv import load_dotenv
 from faker import Faker
 from selene import browser, be
-from ..clients.auth_client import TokenManager
-from ..clients.categories_client import NifflerCategoriesClient
-from ..clients.currencies_client import NifflerCurrencyClient
-from ..clients.spending_client import NifflerSpendingClient
-from ..clients.statistics_client import NifflerStatisticsClient
-from ..clients.users_client import NifflerUsersClient
-from ..core.base_session import BaseSession
-from ..models.config import Envs
-from ..pages.login_page import login_page
-from ..pages.profile_page import profile_page
+from niffler_e_2_e_tests_python.clients.auth_client import TokenManager
+from niffler_e_2_e_tests_python.clients.categories_client import NifflerCategoriesClient
+from niffler_e_2_e_tests_python.clients.currencies_client import NifflerCurrencyClient
+from niffler_e_2_e_tests_python.clients.kafka_client import KafkaClient
+from niffler_e_2_e_tests_python.clients.spending_client import NifflerSpendingClient
+from niffler_e_2_e_tests_python.clients.statistics_client import NifflerStatisticsClient
+from niffler_e_2_e_tests_python.clients.users_client import NifflerUsersClient
+from niffler_e_2_e_tests_python.core.base_session import BaseSession
+from niffler_e_2_e_tests_python.models.config import Envs
+from niffler_e_2_e_tests_python.pages.login_page import login_page
+from niffler_e_2_e_tests_python.pages.profile_page import profile_page
 import allure
 import pytest
 from allure_commons.reporter import AllureReporter
@@ -71,7 +72,8 @@ def envs() -> Envs:
         registration_url=os.getenv("REGISTRATION_URL"),
         auth_url=os.getenv("AUTH_URL"),
         api_auth_url=os.getenv("API_AUTH_URL"),
-        spend_db_url=os.getenv("SPEND_DB_URL")
+        spend_db_url=os.getenv("SPEND_DB_URL"),
+        kafka_address=os.getenv("KAFKA_ADDRESS")
     )
     allure.attach(envs_instance.model_dump_json(indent=2), name="envs.json", attachment_type=AttachmentType.JSON)
     return envs_instance
@@ -403,3 +405,11 @@ def api_update_user(envs: Envs, get_token_for_api_tests: str):
 def get_token_for_api_tests(envs: Envs, authenticated_user) -> str:
     token_manager = TokenManager(envs=envs, driver=browser.driver)
     return token_manager.get_token()
+
+
+
+@pytest.fixture(scope="session")
+def kafka_connect(envs):
+    """Взаимодействие с Kafka"""
+    kafka_client = KafkaClient(envs)
+    yield kafka_client

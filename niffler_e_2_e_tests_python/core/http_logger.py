@@ -1,4 +1,4 @@
-from ..core.base_session import BaseSession
+from niffler_e_2_e_tests_python.core.base_session import BaseSession
 from niffler_e_2_e_tests_python.models.config import Envs
 
 

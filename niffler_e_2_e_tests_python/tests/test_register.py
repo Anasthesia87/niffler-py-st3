@@ -1,6 +1,6 @@
 from selene import browser, have
 import allure
-from ..pages.register_page import registration_page
+from niffler_e_2_e_tests_python.pages.register_page import registration_page
 
 
 @allure.epic("Регистрация пользователя")

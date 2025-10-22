@@ -3,8 +3,8 @@ from uuid import UUID
 import allure
 from sqlmodel import Session, select
 from selene import be
-from ..pages.profile_page import profile_page
-from ..databases.spend_db import SpendDb, Category
+from niffler_e_2_e_tests_python.pages.profile_page import profile_page
+from niffler_e_2_e_tests_python.databases.spend_db import SpendDb, Category
 
 
 @allure.epic("Управление категориями")

@@ -1,10 +1,10 @@
 from datetime import datetime
 import allure
 from selene import browser, have
-from ..models.spend import Spend, Category, SpendAdd
-from ..pages.spending_page import spending_page
+from niffler_e_2_e_tests_python.models.spend import Spend, Category, SpendAdd
+from niffler_e_2_e_tests_python.pages.spending_page import spending_page
 import logging
-from ..databases.spend_db import SpendDb
+from niffler_e_2_e_tests_python.databases.spend_db import SpendDb
 import os
 from sqlmodel import Session, select
 
